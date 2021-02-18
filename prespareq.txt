@@ -1,0 +1,64 @@
+Design an Enterprise Service Bus
+
+Design-YouTube-Very-detailed-design-with-diagrams
+
+Design the T9 predictive text algorithm and system
+
+Modify an OTP generation system to handle more requests
+
+
+OCR web app
+
+System Design: Design Instacart
+
+Real time analytics : https://leetcode.com/discuss/interview-question/system-design/562404/System-designorMicrosoftor-Real-time-analytics
+
+Design cashback processing system : https://leetcode.com/discuss/interview-question/system-design/543041/Design-cashback-processing-system
+
+Design a copyright detection system : https://leetcode.com/discuss/interview-question/system-design/530031/FAANG-Interview-Question-Design-a-copyright-detection-system
+ 
+ 
+Design-video-sharing-platform-like-Youtube : https://leetcode.com/discuss/interview-question/system-design/496042/Design-video-sharing-platform-like-Youtube
+
+live share functionality : https://leetcode.com/discuss/interview-question/system-design/485856/Microsoft-System-design
+
+
+System Design | Slack : https://leetcode.com/discuss/interview-question/system-design/339849/System-Design-or-Slack
+
+
+important system designs questions https://github.com/prasadgujar/low-level-design-primer 
+
+
+
+
+Real-time-analytics
+
+Functional Requirement:
+Real-time analytics on large amount of streaming data, such as counts, top N, range counts.
+For range count, do we allow user to specify the range? I'm assuming user can select a few fixed intervals, such as 10s, 30s, 1min, 5min, 1h, intervals causing it's more interesting. Check with the interviewer.
+Non-functional requirement:
+Durable, won't lose data
+low latency analytics
+Estimation
+data size 1TB/min = 16G/s. Assuming we are using some machines to perform quick initial processing, I would guess each machine would only be able to handle 1G/s max? so we would need 16 'Producers' for handling the data. Using this logic 100TB/min would take 1600 machines.
+
+Architecture
+RawData -> LB -> Producer(extract signal from raw data) -> Queue -> Consumer(calculate signals) -> aggregator -> Monitoring tool
+
+Algorithms:
+
+Logic on Producers:
+Instead of storing each row of data, we will only store a count of data with granularity of 1sec timestamp to save space.
+The data each Producer send to queue will look like [t=13s,product_id=001,count=3; t=13s,product_id=002,count=8; t=14s,product_id=001,count=5 ...], and similar list for other operation counts.
+The data are also partitioned according to the id to ensure same product_id/operations are sent to the some queue.
+*Logic on Consumers.
+For counts, Consumer simply adds up the all the counts from the Queue. Consumer should aggregate counts with different time-granularity(5sec, 1min, 5min, 1h, etc) to help with query later.
+For 'Most used Product', this is same as TopK with K=1. Have each consumer process frequency for each product_id, and only keeping the topK highest used products for desired time range.
+*Logic on Aggregation:
+For counts, just collect info from all consumer
+For TopK, take K rows from each consumer and do a merge, see Leetcode 23. Merge k Sorted Lists.
+DB, i actually think the results stored in a time-series database would be good for the final analytics. SQL also works. Raw data if we have to store it, NO-SQL would be better for high amount of write, maybe Casandra.
+Scaling: Each component was designed with scalability in mind, so just add more machines.
+
+
+
